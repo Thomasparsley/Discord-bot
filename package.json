@@ -1,0 +1,23 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot in TypeScript.",
+  "main": "bot/index.ts",
+  "scripts": {
+    "launch": "node bot/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/slunimara/Discord-bot"
+  },
+  "author": "Marek Brodacký",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^13.8.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.28.0",
+    "@typescript-eslint/parser": "^5.28.0",
+    "eslint": "^8.18.0"
+  }
+}
