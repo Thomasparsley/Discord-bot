@@ -6,7 +6,7 @@
   "license": "ISC",
   "main": "bot/index.ts",
   "scripts": {
-    "launch": "node bot/index.ts"
+    "launch": "ts-node bot/index.ts"
   },
   "repository": {
     "type": "git",

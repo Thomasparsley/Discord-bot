@@ -1,6 +1,6 @@
 
 import { REST } from "@discordjs/rest";
-import { Awaitable, Client, Intents } from "discord.js";
+import { Awaitable, CacheType, Client, Intents, Interaction } from "discord.js";
 import { Command } from "./command";
 import { Routes } from 'discord-api-types/v9';
 
@@ -13,31 +13,53 @@ export class Bot {
     clientId: string;
     private token: string;
     
-    commands: Array<Command>;
+    commands: Map<string, Command>;
     musicQueue: Array<String>;
 
-    private onReady: EventType
+    private onReady: EventReady
         = async (client: Client) => {}
+    private onInteractionCreate: EventInteraction
+        = async (interactionArgs: EventInteractionArgs) => {}
 
     constructor(config: BotConfig) {
+        this.commands = new Map<string, Command>();
         this.token = config.token;
         this.guildId = config.guildId;
         this.clientId = config.clientId;  
 
         this.client = new Client({ intents: [Intents.FLAGS.GUILDS] });    
         this.rest = new REST({ version: REST_VERSION }).setToken(config.token);
-
         this.musicQueue = [];
-        this.commands = config.commands;
 
         this.onReady = config.onReady;
+        this.onInteractionCreate = config.onInteractionCreate;
 
         this.initOnReady();
+        this.initOnInteractionCreate();
+        this.initCommands(config.commands);
+    }
+
+    private initCommands(commands: Command[]){
+        commands.forEach(command =>{
+            this.commands.set(command.getName(), command);
+        });
     }
 
     private initOnReady() {
         this.client.on('ready', async () => {
             await this.onReady(this.client);
+        });
+    }
+
+    private initOnInteractionCreate() {
+        this.client.on('interactionCreate', async (interaction: Interaction) => {
+            const args: EventInteractionArgs = {
+                client: this.client, 
+                interaction: interaction, 
+                commands: this.commands
+            }
+
+            await this.onInteractionCreate(args);
         });
     }
 
@@ -61,7 +83,16 @@ interface BotConfig {
     guildId: string;
     clientId: string;
     commands: Array<Command>;
-    onReady: EventType;
+    onReady: EventReady;
+    onInteractionCreate: EventInteraction;
 }
 
-export type EventType = (client: Client) => Awaitable<void>
+interface EventInteractionArgs {
+    client: Client; 
+    interaction: Interaction<CacheType>;
+    commands: Map<string, Command>;
+}
+
+export type EventReady = (client: Client) => Awaitable<void>
+export type EventInteraction = (interactionArgs: EventInteractionArgs) => Awaitable<void>
+

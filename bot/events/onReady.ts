@@ -1,6 +1,6 @@
-import { EventType } from "../bot";
+import { EventReady } from "../bot";
 
-const event: EventType = async (client) => {
+const event: EventReady = async (client) => {
     if(!client.user){
         return;
     }

@@ -1,9 +1,10 @@
 import { Client, Awaitable, CommandInteraction, CacheType } from "discord.js"
 import { SlashCommandBuilder } from "@discordjs/builders";
 
-interface CommandArgs {
+export interface CommandArgs {
     client: Client;
     interaction: CommandInteraction<CacheType>;
+    replySilent: (content: string) => Promise<void>;
 };
 
 export type CommandAction = (args: CommandArgs) => Awaitable<void>;
@@ -24,7 +25,7 @@ export class Command {
         this.builder.setDescription(description);
     }
 
-    public getName(): String {
+    public getName(): string {
         return this.name;
     }
 
