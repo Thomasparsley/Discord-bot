@@ -3,6 +3,7 @@ import { REST } from "@discordjs/rest";
 import { Awaitable, CacheType, Client, Intents, Interaction } from "discord.js";
 import { Command } from "./command";
 import { Routes } from 'discord-api-types/v9';
+import { MusicPlayer } from "./musicPlayer";
 
 const REST_VERSION = "9"
 
@@ -14,7 +15,7 @@ export class Bot {
     private token: string;
     
     commands: Map<string, Command>;
-    musicQueue: Array<String>;
+    private MusicPlayer: MusicPlayer;
 
     private onReady: EventReady
         = async (client: Client) => {}
@@ -29,7 +30,7 @@ export class Bot {
 
         this.client = new Client({ intents: [Intents.FLAGS.GUILDS] });    
         this.rest = new REST({ version: REST_VERSION }).setToken(config.token);
-        this.musicQueue = [];
+        this.MusicPlayer = new MusicPlayer();
 
         this.onReady = config.onReady;
         this.onInteractionCreate = config.onInteractionCreate;

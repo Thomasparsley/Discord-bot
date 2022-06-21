@@ -8,14 +8,15 @@ export interface CommandArgs {
 };
 
 export type CommandAction = (args: CommandArgs) => Awaitable<void>;
+type CommandBuilder = SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
 
 export class Command {
     private name: string;
     private description: string;
-    private builder: SlashCommandBuilder;
+    private builder: CommandBuilder;
     readonly execute: CommandAction;
 
-    constructor(name: string, description: string, builder: SlashCommandBuilder, execute: CommandAction) {
+    constructor(name: string, description: string, builder: CommandBuilder, execute: CommandAction) {
         this.name = name;
         this.description = description;
         this.builder = builder;
@@ -33,7 +34,7 @@ export class Command {
         return this.description;
     }
 
-    public getBuilder(): SlashCommandBuilder {
+    public getBuilder(): CommandBuilder {
         return this.builder;
     }
 }
