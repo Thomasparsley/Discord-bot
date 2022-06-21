@@ -2,84 +2,82 @@
 import { REST } from "@discordjs/rest";
 import { Awaitable, CacheType, Client, Intents, Interaction } from "discord.js";
 import { Command } from "./command";
-import { Routes } from 'discord-api-types/v9';
-import { MusicPlayer } from "./musicPlayer";
+import { Routes } from "discord-api-types/v9";
+import { MusicPlayer } from "./music/musicPlayer";
 
-const REST_VERSION = "9"
+const REST_VERSION = "9";
 
 export class Bot {
-    client: Client;
-    rest: REST;
-    guildId: string;
-    clientId: string;
-    private token: string;
+	client: Client;
+	rest: REST;
+	guildId: string;
+	clientId: string;
+	private token: string;
     
-    commands: Map<string, Command>;
-    private MusicPlayer: MusicPlayer;
+	commands: Map<string, Command>;
+	private MusicPlayer: MusicPlayer;
 
-    private onReady: EventReady
-        = async (client: Client) => {}
-    private onInteractionCreate: EventInteraction
-        = async (interactionArgs: EventInteractionArgs) => {}
+	private onReady: EventReady
+		= async (client: Client) => {};
+	private onInteractionCreate: EventInteraction
+		= async (interactionArgs: EventInteractionArgs) => {};
 
-    constructor(config: BotConfig) {
-        this.commands = new Map<string, Command>();
-        this.token = config.token;
-        this.guildId = config.guildId;
-        this.clientId = config.clientId;  
+	constructor(config: BotConfig) {
+		this.commands = new Map<string, Command>();
+		this.token = config.token;
+		this.guildId = config.guildId;
+		this.clientId = config.clientId;  
 
-        this.client = new Client({ intents: [Intents.FLAGS.GUILDS] });    
-        this.rest = new REST({ version: REST_VERSION }).setToken(config.token);
-        this.MusicPlayer = new MusicPlayer();
+		this.client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES] });    
+		this.rest = new REST({ version: REST_VERSION }).setToken(config.token);
+		this.MusicPlayer = new MusicPlayer();
 
-        this.onReady = config.onReady;
-        this.onInteractionCreate = config.onInteractionCreate;
+		this.onReady = config.onReady;
+		this.onInteractionCreate = config.onInteractionCreate;
 
-        this.initOnReady();
-        this.initOnInteractionCreate();
-        this.initCommands(config.commands);
+		this.initOnReady();
+		this.initOnInteractionCreate();
+		this.initCommands(config.commands);
+	}
 
-        
-    }
+	private initCommands(commands: Command[]){
+		commands.forEach(command =>{
+			this.commands.set(command.getName(), command);
+		});
+	}
 
-    private initCommands(commands: Command[]){
-        commands.forEach(command =>{
-            this.commands.set(command.getName(), command);
-        });
-    }
+	private initOnReady() {
+		this.client.on("ready", async () => {
+			await this.onReady(this.client);
+		});
+	}
 
-    private initOnReady() {
-        this.client.on('ready', async () => {
-            await this.onReady(this.client);
-        });
-    }
+	private initOnInteractionCreate() {
+		this.client.on("interactionCreate", async (interaction: Interaction) => {
+			const args: EventInteractionArgs = {
+				client: this.client, 
+				interaction: interaction, 
+				commands: this.commands,
+				musicPlayer: this.MusicPlayer,
+			};
 
-    private initOnInteractionCreate() {
-        this.client.on('interactionCreate', async (interaction: Interaction) => {
-            const args: EventInteractionArgs = {
-                client: this.client, 
-                interaction: interaction, 
-                commands: this.commands,
-                musicPlayer: this.MusicPlayer,
-            }
+			await this.onInteractionCreate(args);
+		});
+	}
 
-            await this.onInteractionCreate(args);
-        });
-    }
+	public async login() {
+		await this.client.login(this.token);
+	}
 
-    public async login() {
-        await this.client.login(this.token);
-    }
-
-    public async buildCommads(commands: Command[]) {
-        const slashCommands = commands.map(command => {
-            return command.getBuilder().toJSON();
-        });
+	public async buildCommads(commands: Command[]) {
+		const slashCommands = commands.map(command => {
+			return command.getBuilder().toJSON();
+		});
     
-        this.rest.put(Routes.applicationGuildCommands(this.clientId, this.guildId), { body: slashCommands })
-            .then(() => console.log('Successfully registered application commands.'))
-            .catch(console.error);
-    }
+		this.rest.put(Routes.applicationGuildCommands(this.clientId, this.guildId), { body: slashCommands })
+			.then(() => console.log("Successfully registered application commands."))
+			.catch(console.error);
+	}
 }
 
 interface BotConfig {
