@@ -6,6 +6,12 @@ export const notValidURL = "Tato adresa není validní.";
 export const CommandPing = {
     name: "ping",
     description: "pošli ping botovi",
+};
+
+
+export const CommandPlay = {
+    name: "play",
+    description: "pusť si svou oblíbenou hudbu",
     options: [
         {
             name: "odkaz",

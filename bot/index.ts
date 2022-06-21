@@ -5,11 +5,13 @@ import onInteractionCreate from "./events/onInteractionCreate"
 const { clientId, guildId, token } = require('../config.json');
 
 import {
-    ping,
+    pingCommand,
+    playCommand,
 } from "./commands";
 
 const commands = [
-    ping
+    pingCommand,
+    playCommand
 ];
 
 const bot = new Bot({

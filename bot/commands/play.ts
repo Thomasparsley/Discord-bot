@@ -1,19 +1,19 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { GuildMember } from "discord.js";
 import { Command } from "../command";
-import { CommandPing, memeberNotConnected, notValidURL } from "../Vocabulary";
+import { CommandPlay, memeberNotConnected, notValidURL } from "../Vocabulary";
 
-const re = new RegExp("(https:\/\/)?(www.)?(youtube.com|youtu.be)\/(watch\?v=)?(\S)+");
+const re = /(https:\/\/)?(www.)?(youtube.com|youtu.be)\/(watch\?v=)?(\S)+/g;
 
-export const command = new Command(
-    CommandPing.name,
-    CommandPing.description,
+export const playCommand = new Command(
+    CommandPlay.name,
+    CommandPlay.description,
     new SlashCommandBuilder()
 		.addStringOption(option =>
-			option.setName(CommandPing.options[0].name)
-				.setDescription(CommandPing.options[0].description)
+			option.setName(CommandPlay.options[0].name)
+				.setDescription(CommandPlay.options[0].description)
 				.setRequired(true)),
-    async ({ interaction, replySilent }) => {
+    async ({ client, interaction, musicPlayer, replySilent }) => {
 		const voicechannel = (interaction.member as GuildMember)?.voice.channel
 		
 		if (!voicechannel) {
@@ -21,11 +21,18 @@ export const command = new Command(
 			return;
 		}
 
-		const URL = interaction.options.getString(CommandPing.options[0].name);
+		// const URL = interaction.options.getString(CommandPlay.options[0].name);
+		const URL = "https://www.youtube.com/watch?v=yWzsR-j5waY";
 
 		if (!URL || !URL.match(re)) {
 			await replySilent(notValidURL);
 			return;
 		}
+
+		// add song
+
+		if (!musicPlayer.isConnected()){
+			musicPlayer.playerConnect(voicechannel);
+		} 
     }
 )

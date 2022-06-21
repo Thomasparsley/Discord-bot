@@ -38,6 +38,8 @@ export class Bot {
         this.initOnReady();
         this.initOnInteractionCreate();
         this.initCommands(config.commands);
+
+        
     }
 
     private initCommands(commands: Command[]){
@@ -57,7 +59,8 @@ export class Bot {
             const args: EventInteractionArgs = {
                 client: this.client, 
                 interaction: interaction, 
-                commands: this.commands
+                commands: this.commands,
+                musicPlayer: this.MusicPlayer,
             }
 
             await this.onInteractionCreate(args);
@@ -92,6 +95,7 @@ interface EventInteractionArgs {
     client: Client; 
     interaction: Interaction<CacheType>;
     commands: Map<string, Command>;
+    musicPlayer: MusicPlayer;
 }
 
 export type EventReady = (client: Client) => Awaitable<void>

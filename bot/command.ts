@@ -1,9 +1,11 @@
 import { Client, Awaitable, CommandInteraction, CacheType } from "discord.js"
 import { SlashCommandBuilder } from "@discordjs/builders";
+import { MusicPlayer } from "./musicPlayer";
 
 export interface CommandArgs {
     client: Client;
     interaction: CommandInteraction<CacheType>;
+    musicPlayer: MusicPlayer;
     replySilent: (content: string) => Promise<void>;
 };
 

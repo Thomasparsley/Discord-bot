@@ -4,7 +4,7 @@ import { CommandArgs } from "../command";
 import { unknownCommand, executeError } from "../Vocabulary";
 
 const event: EventInteraction = async (interactionArgs) => {
-    const { client, interaction, commands } = interactionArgs;
+    const { client, interaction, commands, musicPlayer } = interactionArgs;
 
     if(!interaction.isCommand){
         return;
@@ -31,6 +31,7 @@ const event: EventInteraction = async (interactionArgs) => {
             client: client,
             interaction: commandInteraction,
             replySilent: replySilent,
+            musicPlayer: musicPlayer,
         }
 
         await command.execute(commandArgs);
