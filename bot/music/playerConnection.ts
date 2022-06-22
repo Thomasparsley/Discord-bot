@@ -41,7 +41,7 @@ export class PlayerConnection {
 
 	private initDisconnected() {
 		this.connection.on(VoiceConnectionStatus.Disconnected, () => {
-			console.log("The connection has entered the Ready Disconnected.");
+			this.partentEmitter.emit("disconnected");
 		});
 	}
 

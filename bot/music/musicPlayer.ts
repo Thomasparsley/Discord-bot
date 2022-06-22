@@ -4,12 +4,15 @@ import { EventEmitter } from "events";
 import { emptyQueue, errorConnection, errorSkip } from "../Vocabulary";
 import { PlayerConnection } from "./playerConnection";
 import { AudioPlayer } from "./audioPlayer";
+
 import ytdl from "ytdl-core";
+const sptyt = require("spotify-to-yt");
+import ytpl from "ytpl";
 
 export class MusicPlayer {
 	private playerConnection: PlayerConnection | null;
 	private audioPlayer: AudioPlayer | null;
-	private songs: Array<string>;
+	private songs: Array<Song>;
     
 	private audioEmitter: EventEmitter;
 	private connectionEmitter: EventEmitter;
@@ -71,23 +74,8 @@ export class MusicPlayer {
 		});
 
 		this.audioEmitter.on("idle", () => {
-			if (this.audioPlayer && this.songs.length) {
-				const song = this.songs.pop();
-                
-				if(!song) {
-					return;
-				}
-                   
-				const stream = ytdl(song, { filter: "audioonly" });
-				const resource = createAudioResource(stream);
-				this.audioPlayer.play(resource);
-			} else {
-				this.disconnect();
-			}
+			this.playSong();
 		});
-
-		// this.audioEmitter.on("playing", () => {});
-		// this.audioEmitter.on("paused", () => {});
 	}
 
 	private initConnectionEmitter() {
@@ -95,11 +83,32 @@ export class MusicPlayer {
 			console.log("ERR #2");
 			this.disconnect();
 		});
+
+		this.connectionEmitter.once("disconnected", () => {
+			this.disconnect();
+		});
 	}
 
-	public async skipSong(){
+	private playSong(){
+		const song = this.songs.pop();
+
+		if (this.audioPlayer && song) {
+			const stream = ytdl(song.url, { filter: "audioonly" });
+			const resource = createAudioResource(stream);
+			this.audioPlayer.play(resource);
+		} else {
+			this.disconnect();
+		}
+	}
+
+	public async skipSong(skip: number){
 		if(!this.audioPlayer){
 			return;
+		}
+
+		while (skip > 0) {
+			this.songs.pop();
+			skip--;
 		}
 
 		try {
@@ -116,6 +125,7 @@ export class MusicPlayer {
 		if (!this.audioPlayer) {
 			throw new Error(emptyQueue);
 		}
+
 		const status = this.audioPlayer.getStatus();
 		if (status === "playing") {
 			this.audioPlayer.pause();
@@ -124,8 +134,75 @@ export class MusicPlayer {
 		}
 	}
 
-	public addSong(song: string) {
-		this.songs.push(song);
+	public add(songURL: SongURL) {
+		if(songURL.type === "youtube") {
+			this.addYoutube(songURL.url);
+		} else {
+			this.addSpotify(songURL.url);
+		}
+	}
+
+	private addYoutube(url: string) {
+		if (!url.includes("&list=")){
+			ytdl.getBasicInfo(url)
+				.catch((error:any) => {
+					console.warn(error);
+				})
+				.then((song:void | ytdl.videoInfo) => {
+					if(song) {
+						this.songs.push(
+							{
+								title: song.videoDetails.title,
+								url: song.videoDetails.video_url, 
+							});
+					}
+				});
+		} else {
+			ytpl(url)
+				.catch((error:any) => {
+					console.warn(error);
+				})
+				.then((playlist:void | ytpl.Result) => {
+					if(playlist){
+						for(const item of playlist.items) {
+							this.songs.push({
+								title: item.title,
+								url: item.shortUrl, 
+							});
+						}
+					}
+				});
+		}
+	}
+
+	private addSpotify(url: string) {
+		if (url.includes("/track/")){
+			sptyt.trackGet(url)
+				.catch((error:any) => {
+					console.warn(error);
+				})
+				.then((song:any) => {
+					if(song){
+						this.songs.push(
+							{
+								title: song.info[0].title,
+								url: song.url, 
+							});
+					}
+				});
+		} else {
+			sptyt.playListGet(url)
+				.catch((error:any) => {
+					console.warn(error);
+				})
+				.then((playlist:any) => {
+					if(playlist){
+						for(const url of playlist.songs) {
+							this.addYoutube(url);
+						}
+					}
+				});
+		}
 	}
 
 	private disconnect() {
@@ -135,4 +212,14 @@ export class MusicPlayer {
 		this.audioPlayer?.getPlayer().stop();
 		this.audioPlayer = null;
 	}
+}
+
+export interface SongURL{
+	url: string;
+	type: "youtube" | "spotify";
+}
+
+interface Song {
+	title: string;
+	url: string;
 }

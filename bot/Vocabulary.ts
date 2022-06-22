@@ -1,15 +1,16 @@
 export const unknownCommand = "Tento příkaz neznám.";
 export const executeError = "Nastala chyba při vykonávání příkazu.";
-export const notValidURL = "Tato adresa není validní.";
 export const songAdded = "Písnička byla přidána do fronty.";
 export const songSkipped = "Písnička byla přeskočena.";
 export const songPaused = "Písnička byla pozastavena.";
 export const memeberNotConnected = "Musíš být ve hlasovém kanále.";
 export const emptyQueue = "Fronta je prázdná.";
 
+export const errorArg = "Neplatný argument.";
 export const errorSkip = "Nastala chyba při přeskakování písničky.";
 export const errorPause = "Nastala chyba při pozastavování písničky.";
 export const errorConnection = "Nastala chyba při připojení.";
+export const errorPlaylist = "Nastala chyba při parsování playlistu.";
 
 export const CommandPing = {
 	name: "ping",
@@ -35,5 +36,11 @@ export const CommandPause = {
 export const CommandSkip = {
 	name: "skip",
 	description: "přeskoč aktuálně přehranou písničku",
+	options: [
+		{
+			name: "počet",
+			description: "kolik písní chceš přeskočit"
+		}
+	]
 };
 
