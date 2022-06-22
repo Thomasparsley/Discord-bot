@@ -32,13 +32,13 @@ export const playCommand = new Command(
 
 		if (!musicPlayer.isConnected()){
 			try {
-				musicPlayer.playerConnect(voicechannel);
+				await musicPlayer.playerConnect(voicechannel);
 			} catch (err: any) {
 				await replySilent(err);
 				return;
 			}
 		}
 		
-		await replySilent(songAdded);
+		await replySilent(songAdded + `(${URL})`);
 	}
 );

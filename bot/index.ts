@@ -7,11 +7,15 @@ const { clientId, guildId, token } = require("../config.json");
 import {
 	pingCommand,
 	playCommand,
+	skipCommand,
+	pauseCommand,
 } from "./commands";
 
 const commands = [
 	pingCommand,
-	playCommand
+	playCommand,
+	skipCommand,
+	pauseCommand,
 ];
 
 const bot = new Bot({

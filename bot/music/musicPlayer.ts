@@ -1,7 +1,7 @@
 import { createAudioResource, VoiceConnectionStatus, entersState, AudioPlayerStatus } from "@discordjs/voice";
 import { VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
-import { errorConnection } from "../Vocabulary";
+import { emptyQueue, errorConnection, errorSkip } from "../Vocabulary";
 import { PlayerConnection } from "./playerConnection";
 import { AudioPlayer } from "./audioPlayer";
 import ytdl from "ytdl-core";
@@ -39,10 +39,17 @@ export class MusicPlayer {
 
 		try {
 			await entersState(this.playerConnection.getConnection(), VoiceConnectionStatus.Ready, 20e3);
+			this.connectAudio();
 		} catch (error) {
 			console.warn(error);
 			this.disconnect();
 			throw new Error(errorConnection);
+		}
+	}
+
+	private async connectAudio() {
+		if (!this.playerConnection) {
+			return;
 		}
 
 		this.audioPlayer = new AudioPlayer(this.playerConnection, this.audioEmitter); 
@@ -55,6 +62,7 @@ export class MusicPlayer {
 			this.disconnect();
 			throw new Error(errorConnection);
 		}
+		
 	}
 
 	private initAudioEmitter() {
@@ -65,9 +73,8 @@ export class MusicPlayer {
 		this.audioEmitter.on("idle", () => {
 			if (this.audioPlayer && this.songs.length) {
 				const song = this.songs.pop();
-				console.log(song);
                 
-				if (!song) {
+				if(!song) {
 					return;
 				}
                    
@@ -85,8 +92,36 @@ export class MusicPlayer {
 
 	private initConnectionEmitter() {
 		this.connectionEmitter.once("error", () => {
+			console.log("ERR #2");
 			this.disconnect();
 		});
+	}
+
+	public async skipSong(){
+		if(!this.audioPlayer){
+			return;
+		}
+
+		try {
+			await entersState(this.audioPlayer.getPlayer(), AudioPlayerStatus.Playing, 10e3);
+			this.audioEmitter.emit("idle");
+		} catch (err: any) {
+			console.warn(err);
+			this.disconnect();
+			throw new Error(errorSkip);
+		}
+	}
+
+	public stopPlayer() {
+		if (!this.audioPlayer) {
+			throw new Error(emptyQueue);
+		}
+		const status = this.audioPlayer.getStatus();
+		if (status === "playing") {
+			this.audioPlayer.pause();
+		} else if (status === "paused") {
+			this.audioPlayer.unpause();
+		}
 	}
 
 	public addSong(song: string) {

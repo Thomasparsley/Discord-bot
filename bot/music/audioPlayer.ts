@@ -4,6 +4,7 @@ import { EventEmitter } from "events";
 
 export class AudioPlayer {
 	private player: _AudioPlayer; 
+	private status: "init" | "idle" | "playing" | "paused";
 	private partentEmitter: EventEmitter;
     
 	constructor(connection: PlayerConnection, partentEmitter: EventEmitter) {
@@ -20,6 +21,7 @@ export class AudioPlayer {
 		this.initOnPaused();
 
 		connection.getConnection().subscribe(this.player);
+		this.status = "init";
 	}
 
 	private initOnError() {
@@ -32,22 +34,29 @@ export class AudioPlayer {
 	private initOnIdle() {
 		this.player.on(AudioPlayerStatus.Idle, () => {
 			this.partentEmitter.emit("idle");
+			this.status = "idle";
 		});
 	}
 
 	private initOnPlaying() {
 		this.player.on(AudioPlayerStatus.Playing, () => {
 			this.partentEmitter.emit("playing");
+			this.status = "playing";
 		});
 	}
 
 	private initOnPaused() {
 		this.player.on(AudioPlayerStatus.Paused , () => {
 			this.partentEmitter.emit("paused");
+			this.status = "paused";
 		});
 	}
 
-	public getPlayer() {
+	public getStatus(): "init" | "idle" | "playing" | "paused" {
+		return this.status;
+	}
+
+	public getPlayer():_AudioPlayer {
 		return this.player;
 	}
 
@@ -57,5 +66,9 @@ export class AudioPlayer {
 
 	public pause() {
 		this.player.pause();
+	}
+
+	public unpause() {
+		this.player.unpause();
 	}
 }
