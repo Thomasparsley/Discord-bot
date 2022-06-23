@@ -1,18 +1,19 @@
 import { createAudioResource, VoiceConnectionStatus, entersState, AudioPlayerStatus } from "@discordjs/voice";
 import { VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
+import ytdl from "ytdl-core";
+
 import { emptyQueue, errorConnection, errorSkip } from "../Vocabulary";
 import { PlayerConnection } from "./playerConnection";
 import { AudioPlayer } from "./audioPlayer";
-
-import ytdl from "ytdl-core";
-const sptyt = require("spotify-to-yt");
-import ytpl from "ytpl";
+import { InfoDownloader } from "./infoDownloader";
 
 export class MusicPlayer {
 	private playerConnection: PlayerConnection | null;
 	private audioPlayer: AudioPlayer | null;
-	private songs: Array<Song>;
+	private queue: Array<Song | Playlist | Promise<Song | Playlist | undefined>>;
+
+	private downloader: InfoDownloader;
     
 	private audioEmitter: EventEmitter;
 	private connectionEmitter: EventEmitter;
@@ -20,7 +21,8 @@ export class MusicPlayer {
 	constructor(){
 		this.playerConnection = null;
 		this.audioPlayer = null;
-		this.songs = [];
+		this.queue = [];
+		this.downloader = new InfoDownloader();
 
 		this.audioEmitter = new EventEmitter();
 		this.connectionEmitter = new EventEmitter();
@@ -29,7 +31,7 @@ export class MusicPlayer {
 		this.initConnectionEmitter();
 	}
 
-	public isConnected() : boolean {
+	public isConnected(): boolean {
 		return (this.playerConnection) ? true : false;
 	}
 
@@ -70,6 +72,7 @@ export class MusicPlayer {
 
 	private initAudioEmitter() {
 		this.audioEmitter.once("error", () => {
+			console.log(this.queue);
 			this.disconnect();
 		});
 
@@ -89,16 +92,60 @@ export class MusicPlayer {
 		});
 	}
 
-	private playSong(){
-		const song = this.songs.pop();
+	private async playSong(){
+		const song = await this.getSong();
+		console.log("Song: " + song, " Queue: " + this.queue);
 
 		if (this.audioPlayer && song) {
-			const stream = ytdl(song.url, { filter: "audioonly" });
+			const options:ytdl.downloadOptions = {
+				filter: "audioonly",
+				dlChunkSize: 0,
+				highWaterMark: 1 << 62,
+				liveBuffer: 1 << 62,
+				quality: "lowestaudio",
+			};
+
+			const stream = ytdl(song.url, options);
 			const resource = createAudioResource(stream);
 			this.audioPlayer.play(resource);
-		} else {
+		} else if (!this.queue.length) {
 			this.disconnect();
+		} else {
+			setTimeout(() => this.playSong(), 5e3);
 		}
+	}
+
+	private async getSong(): Promise<Song | undefined>{
+		const item = this.queue[0];
+
+		if (item instanceof Promise) {
+			const promiseResult = await item.then(
+				(queueItem: Song | Playlist | undefined) => {
+					return queueItem;
+				});
+			
+			if (promiseResult) {
+				this.queue[0] = promiseResult;
+			} else {
+				this.queue.pop();
+				return this.getSong();
+			}
+		}
+
+		if (instanceOfSong(this.queue[0])) {
+			return (this.queue.pop() as Song);
+		} else if (Array.isArray(item)) {
+			const playlist = (this.queue[0] as Playlist);
+
+			if (playlist.length) {
+				return (playlist.pop() as Song);
+			} else {
+				this.queue.pop();
+				return this.getSong();
+			}
+		}
+
+		return undefined;
 	}
 
 	public async skipSong(skip: number){
@@ -107,7 +154,7 @@ export class MusicPlayer {
 		}
 
 		while (skip > 0) {
-			this.songs.pop();
+			this.queue.pop();
 			skip--;
 		}
 
@@ -134,75 +181,34 @@ export class MusicPlayer {
 		}
 	}
 
-	public add(songURL: SongURL) {
+	public async add(songURL: SongURL) {
+		const url = songURL.url;
+
 		if(songURL.type === "youtube") {
-			this.addYoutube(songURL.url);
-		} else {
-			this.addSpotify(songURL.url);
-		}
-	}
+			if (!url.includes("&list=")){
+				this.queue.push(
+					this.downloader.ytSongInfo(url)
+				);
+			} else {
+				this.queue.push(
+					this.downloader.ytPlaylistInfo(url)
+				);
+			}
+		} 
+		// else {
+		// 	if (url.includes("/track/")){
+		// 		this.queue.push(
+		// 			this.downloader.spSongInfo(url)
+		// 		);
+		// 	} else {
+		// 		const playlist:Playlist | undefined = await this.downloader.spPlaylistInfo(url);
 
-	private addYoutube(url: string) {
-		if (!url.includes("&list=")){
-			ytdl.getBasicInfo(url)
-				.catch((error:any) => {
-					console.warn(error);
-				})
-				.then((song:void | ytdl.videoInfo) => {
-					if(song) {
-						this.songs.push(
-							{
-								title: song.videoDetails.title,
-								url: song.videoDetails.video_url, 
-							});
-					}
-				});
-		} else {
-			ytpl(url)
-				.catch((error:any) => {
-					console.warn(error);
-				})
-				.then((playlist:void | ytpl.Result) => {
-					if(playlist){
-						for(const item of playlist.items) {
-							this.songs.push({
-								title: item.title,
-								url: item.shortUrl, 
-							});
-						}
-					}
-				});
-		}
-	}
-
-	private addSpotify(url: string) {
-		if (url.includes("/track/")){
-			sptyt.trackGet(url)
-				.catch((error:any) => {
-					console.warn(error);
-				})
-				.then((song:any) => {
-					if(song){
-						this.songs.push(
-							{
-								title: song.info[0].title,
-								url: song.url, 
-							});
-					}
-				});
-		} else {
-			sptyt.playListGet(url)
-				.catch((error:any) => {
-					console.warn(error);
-				})
-				.then((playlist:any) => {
-					if(playlist){
-						for(const url of playlist.songs) {
-							this.addYoutube(url);
-						}
-					}
-				});
-		}
+		// 		console.log(await this.downloader.spPlaylistInfo(url));
+		// 		if (playlist) {
+		// 			this.queue.push(playlist);
+		// 		}
+		// 	}
+		// }
 	}
 
 	private disconnect() {
@@ -219,7 +225,17 @@ export interface SongURL{
 	type: "youtube" | "spotify";
 }
 
-interface Song {
+export interface Song {
 	title: string;
 	url: string;
+}
+
+export type Playlist = Array<Song | Promise<Song | undefined>>;
+
+function instanceOfSong(object: any): boolean {
+	if (typeof object === "object"){
+		return "title" in object || "url" in object;
+	}
+    
+	return false;
 }

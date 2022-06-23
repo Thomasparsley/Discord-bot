@@ -1,6 +1,7 @@
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, NoSubscriberBehavior, AudioPlayer as _AudioPlayer, entersState } from "@discordjs/voice";
-import { PlayerConnection } from "./playerConnection";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, NoSubscriberBehavior, AudioPlayer as _AudioPlayer } from "@discordjs/voice";
 import { EventEmitter } from "events";
+
+import { PlayerConnection } from "./playerConnection";
 
 export class AudioPlayer {
 	private player: _AudioPlayer; 

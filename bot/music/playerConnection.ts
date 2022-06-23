@@ -16,26 +16,12 @@ export class PlayerConnection {
 
 		this.initOnError();
 		this.initDisconnected();
-		this.initConnecting();
-		this.initSignalling();
 	}
 
 	private initOnError() {
 		this.connection.on("error", (err: Error) => {
 			console.warn(err);
 			this.partentEmitter.emit("error");
-		});
-	}
-
-	private initSignalling() {
-		this.connection.on(VoiceConnectionStatus.Signalling, () => {
-			console.log("The connection has entered the Signalling state.");
-		});
-	}
-
-	private initConnecting() {
-		this.connection.on(VoiceConnectionStatus.Connecting, () => {
-			console.log("The connection has entered the Connecting state.");
 		});
 	}
 

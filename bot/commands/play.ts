@@ -1,12 +1,13 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { GuildMember } from "discord.js";
-import { Command } from "../command";
-import { SongURL } from "../music/musicPlayer";
-import { CommandPlay, errorArg, memeberNotConnected, songAdded } from "../Vocabulary";
 import ytsr from "ytsr";
 
+import { CommandPlay, errorArg, errorSpotifyAlbum, memeberNotConnected, songAdded } from "../Vocabulary";
+import { Command } from "../command";
+import { SongURL } from "../music/musicPlayer";
+
 const reYT = /(https:\/\/)?(www.)?(youtube.com|youtu.be)(\S)+/g;
-const reSpotify = /(https:\/\/)?(www.)?(open.spotify.com)\/(track\/|playlist\/|album\/){1}(\S)+/g;
+// const reSpotify = /(https:\/\/)?(www.)?(open.spotify.com)\/(track\/|playlist\/|album\/){1}(\S)+/g;
 
 export const playCommand = new Command(
 	CommandPlay.name,
@@ -35,12 +36,19 @@ export const playCommand = new Command(
 				url: arg,
 				type: "youtube",
 			};
-		} else if (arg.match(reSpotify)) {
-			songURL = {
-				url: arg,
-				type: "spotify",
-			};
-		} else {
+		} 
+		// else if (arg.match(reSpotify)) {
+		// 	if (arg.includes("album")) {
+		// 		await replySilent(errorSpotifyAlbum);
+		// 		return;
+		// 	}
+
+		// 	songURL = {
+		// 		url: arg,
+		// 		type: "spotify",
+		// 	};
+		// } 
+		else {
 			songURL = await ytsr(arg, {limit: 1})
 				.catch((error:any) => {
 					return; 
@@ -63,7 +71,7 @@ export const playCommand = new Command(
 		}
 
 		try {
-			musicPlayer.add(songURL);
+			await musicPlayer.add(songURL);
 		} catch (err:any) {
 			await replySilent(err);
 			return;
