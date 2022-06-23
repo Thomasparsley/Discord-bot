@@ -7,13 +7,12 @@ import { emptyQueue, errorConnection, errorSkip } from "../Vocabulary";
 import { PlayerConnection } from "./playerConnection";
 import { AudioPlayer } from "./audioPlayer";
 import { InfoDownloader } from "./infoDownloader";
+import { Empty, Optional, Some } from "../optional";
 
 export class MusicPlayer {
 	private playerConnection: PlayerConnection | null;
 	private audioPlayer: AudioPlayer | null;
-	private queue: Array<Song | Playlist | Promise<Song | Playlist | undefined>>;
-
-	private downloader: InfoDownloader;
+	private queue: Array<QueueItem>;
     
 	private audioEmitter: EventEmitter;
 	private connectionEmitter: EventEmitter;
@@ -22,7 +21,6 @@ export class MusicPlayer {
 		this.playerConnection = null;
 		this.audioPlayer = null;
 		this.queue = [];
-		this.downloader = new InfoDownloader();
 
 		this.audioEmitter = new EventEmitter();
 		this.connectionEmitter = new EventEmitter();
@@ -94,10 +92,10 @@ export class MusicPlayer {
 
 	private async playSong(){
 		const song = await this.getSong();
-		console.log("Song: " + song, " Queue: " + this.queue);
+		console.log(song, this.queue);
 
-		if (this.audioPlayer && song) {
-			const options:ytdl.downloadOptions = {
+		if (this.audioPlayer && song.isPresent()) {
+			const options: ytdl.downloadOptions = {
 				filter: "audioonly",
 				dlChunkSize: 0,
 				highWaterMark: 1 << 62,
@@ -105,7 +103,7 @@ export class MusicPlayer {
 				quality: "lowestaudio",
 			};
 
-			const stream = ytdl(song.url, options);
+			const stream = ytdl(song.get().url, options);
 			const resource = createAudioResource(stream);
 			this.audioPlayer.play(resource);
 		} else if (!this.queue.length) {
@@ -115,37 +113,48 @@ export class MusicPlayer {
 		}
 	}
 
-	private async getSong(): Promise<Song | undefined>{
-		const item = this.queue[0];
+	private async getSong(): Promise<Optional<Song>>{
+		const empty = Empty<Song>();
+
+		let item: QueueItem;
+		try {
+			item = this.queue[0];
+		} catch (error) {
+			return empty;
+		}
 
 		if (item instanceof Promise) {
-			const promiseResult = await item.then(
-				(queueItem: Song | Playlist | undefined) => {
-					return queueItem;
-				});
+			const result: Optional<Song | Playlist> = await item;
 			
-			if (promiseResult) {
-				this.queue[0] = promiseResult;
+			if (result.isPresent()) {
+				this.queue[0] = result.get();
 			} else {
 				this.queue.pop();
 				return this.getSong();
 			}
 		}
 
-		if (instanceOfSong(this.queue[0])) {
-			return (this.queue.pop() as Song);
+		if (instanceOfSong(item)) {
+			return Some(this.queue.pop() as Song);
 		} else if (Array.isArray(item)) {
-			const playlist = (this.queue[0] as Playlist);
+			const playlist = (this.queue[0] as Playlist | Array<Promise<Optional<Song>>>);
 
-			if (playlist.length) {
-				return (playlist.pop() as Song);
-			} else {
+			// Hamlet, Act III, Scene I [To be, or not to be]
+			const SongOrNotSong = Some(playlist.pop());
+
+			if (SongOrNotSong.isEmpty()) {
 				this.queue.pop();
 				return this.getSong();
 			}
-		}
 
-		return undefined;
+			if (SongOrNotSong.get() instanceof Promise<Optional<Song>>) {
+				return await (SongOrNotSong.get() as Promise<Optional<Song>>);
+			}
+				
+			return SongOrNotSong as Optional<Song>;
+		}
+		
+		return this.getSong();
 	}
 
 	public async skipSong(skip: number){
@@ -187,28 +196,14 @@ export class MusicPlayer {
 		if(songURL.type === "youtube") {
 			if (!url.includes("&list=")){
 				this.queue.push(
-					this.downloader.ytSongInfo(url)
+					InfoDownloader.ytSongInfo(url)
 				);
 			} else {
 				this.queue.push(
-					this.downloader.ytPlaylistInfo(url)
+					InfoDownloader.ytPlaylistInfo(url)
 				);
 			}
 		} 
-		// else {
-		// 	if (url.includes("/track/")){
-		// 		this.queue.push(
-		// 			this.downloader.spSongInfo(url)
-		// 		);
-		// 	} else {
-		// 		const playlist:Playlist | undefined = await this.downloader.spPlaylistInfo(url);
-
-		// 		console.log(await this.downloader.spPlaylistInfo(url));
-		// 		if (playlist) {
-		// 			this.queue.push(playlist);
-		// 		}
-		// 	}
-		// }
 	}
 
 	private disconnect() {
@@ -229,8 +224,8 @@ export interface Song {
 	title: string;
 	url: string;
 }
-
-export type Playlist = Array<Song | Promise<Song | undefined>>;
+type QueueItem = Song | Playlist | Optional<Song | Playlist> | Promise<Optional<Song | Playlist>>;
+export type Playlist = Array<Song>;
 
 function instanceOfSong(object: any): boolean {
 	if (typeof object === "object"){

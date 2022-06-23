@@ -24,7 +24,7 @@ export const CommandPlay = {
 	options: [
 		{
 			name: "search",
-			description: "Odkaz na Youtube/Spotify/libovolá fráze."
+			description: "Odkaz na Youtube/libovolá fráze."
 		}
 	]
 };
