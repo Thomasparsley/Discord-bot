@@ -12,7 +12,7 @@ import { Empty, Optional, Some } from "../optional";
 export class MusicPlayer {
 	private playerConnection: PlayerConnection | null;
 	private audioPlayer: AudioPlayer | null;
-	private queue: Array<QueueItem>;
+	public queue: Array<QueueItem>;
     
 	private audioEmitter: EventEmitter;
 	private connectionEmitter: EventEmitter;
@@ -70,7 +70,6 @@ export class MusicPlayer {
 
 	private initAudioEmitter() {
 		this.audioEmitter.once("error", () => {
-			console.log(this.queue);
 			this.disconnect();
 		});
 
@@ -92,7 +91,6 @@ export class MusicPlayer {
 
 	private async playSong(){
 		const song = await this.getSong();
-		console.log(song, this.queue);
 
 		if (this.audioPlayer && song.isPresent()) {
 			const options: ytdl.downloadOptions = {
@@ -108,63 +106,67 @@ export class MusicPlayer {
 			this.audioPlayer.play(resource);
 		} else if (!this.queue.length) {
 			this.disconnect();
-		} else {
-			setTimeout(() => this.playSong(), 5e3);
+			// setTimeout(() => this.playSong(), 60e3);
 		}
 	}
 
 	private async getSong(): Promise<Optional<Song>>{
 		const empty = Empty<Song>();
 
-		let item: QueueItem;
-		try {
-			item = this.queue[0];
-		} catch (error) {
+		const item: QueueItem | undefined = this.queue[0];
+
+		if (!item){
 			return empty;
 		}
 
 		if (item instanceof Promise) {
 			const result: Optional<Song | Playlist> = await item;
-			
+
 			if (result.isPresent()) {
-				this.queue[0] = result.get();
+				this.queue[0] = result;
 			} else {
 				this.queue.pop();
 				return this.getSong();
 			}
 		}
 
-		if (instanceOfSong(item)) {
-			return Some(this.queue.pop() as Song);
-		} else if (Array.isArray(item)) {
-			const playlist = (this.queue[0] as Playlist | Array<Promise<Optional<Song>>>);
+		const first = (this.queue[0] as Optional<Song | Playlist>).get();
+		if (instanceOfSong(first)) {
+			return this.queue.pop() as Optional<Song>;	
+		} else if (Array.isArray(first)) {
+			const playlist = this.queue[0] as Optional<Playlist>;
 
 			// Hamlet, Act III, Scene I [To be, or not to be]
-			const SongOrNotSong = Some(playlist.pop());
+			const SongOrNotSong = Some<Song | undefined>(playlist.get().pop());
 
-			if (SongOrNotSong.isEmpty()) {
+			if (!playlist.get().length){
 				this.queue.pop();
-				return this.getSong();
-			}
-
-			if (SongOrNotSong.get() instanceof Promise<Optional<Song>>) {
-				return await (SongOrNotSong.get() as Promise<Optional<Song>>);
 			}
 				
 			return SongOrNotSong as Optional<Song>;
 		}
 		
-		return this.getSong();
+		return empty;
 	}
 
 	public async skipSong(skip: number){
 		if(!this.audioPlayer){
 			return;
 		}
+		
+		if (skip > 1){
+			while (skip > 0 && this.queue.length) {
+				const first = this.queue[0];
+				console.log(first);
 
-		while (skip > 0) {
-			this.queue.pop();
-			skip--;
+				if (Array.isArray(first) || (first as Optional<Playlist>).get().length) {
+					(first as Optional<Playlist>).get().pop();
+				} else {	
+					this.queue.pop();
+				}
+
+				skip--;
+			}
 		}
 
 		try {
@@ -224,7 +226,8 @@ export interface Song {
 	title: string;
 	url: string;
 }
-type QueueItem = Song | Playlist | Optional<Song | Playlist> | Promise<Optional<Song | Playlist>>;
+
+type QueueItem = Optional<Song | Playlist> | Promise<Optional<Song | Playlist>>;
 export type Playlist = Array<Song>;
 
 function instanceOfSong(object: any): boolean {

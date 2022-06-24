@@ -29,6 +29,11 @@ export const CommandPlay = {
 	]
 };
 
+export const CommandList = {
+	name: "list",
+	description: "Zobraz seznam skladeb.",
+};
+
 export const CommandPause = {
 	name: "pause",
 	description: "Zastav aktuálně přehranou písničku.",

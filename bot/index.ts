@@ -9,6 +9,8 @@ import {
 	playCommand,
 	skipCommand,
 	pauseCommand,
+	listCommand,
+	
 } from "./commands";
 
 const commands = [
@@ -16,6 +18,7 @@ const commands = [
 	playCommand,
 	skipCommand,
 	pauseCommand,
+	listCommand,
 ];
 
 const bot = new Bot({
