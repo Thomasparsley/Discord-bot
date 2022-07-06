@@ -6,10 +6,12 @@ export const songPaused = "Písnička byla pozastavena.";
 export const memeberNotConnected = "Musíš být ve hlasovém kanále.";
 export const emptyQueue = "Fronta je prázdná.";
 export const queueList = "Aktuální queue: ";
+export const shuffleSuccessful = "Playlist byl zamýchán.";
 
 export const errorArg = "Neplatný argument.";
 export const errorSpotifyAlbum = "Ze spotify lze načíst pouze playlist nebo písničku.";
 export const errorSkip = "Nastala chyba při přeskakování písničky.";
+export const errorShuffle = "Nastala chyba při mýchání.";
 export const errorPause = "Nastala chyba při pozastavování písničky.";
 export const errorConnection = "Nastala chyba při připojení.";
 export const errorPlaylist = "Nastala chyba při parsování playlistu.";
@@ -57,3 +59,7 @@ export const CommandSkip = {
 	]
 };
 
+export const CommandShuffle = {
+	name: "shuffle",
+	description: "Zamýchej playlist nebo queue.",
+};

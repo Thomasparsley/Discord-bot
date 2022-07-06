@@ -226,6 +226,26 @@ export class MusicPlayer {
 		}
 	}
 
+	public async shuffleQueue(){
+		const first = await this.queue[0];
+
+		if (first instanceof Optional<Playlist>) {
+			this.shuffle((first.get()as Playlist).getList());
+		} else {
+			this.shuffle(this.queue);
+		}
+	}
+
+	private shuffle(array: Array<any>){
+		for (let i = array.length - 1; i >= 1; i--) {
+			const j = Math.floor(Math.random() * array.length);
+			const temp = array[j];
+			array[j] = array[i];
+			array[i] = temp;
+		}
+		console.log(array);
+	}
+
 	public stopPlayer() {
 		if (!this.audioPlayer) {
 			throw new Error(emptyQueue);

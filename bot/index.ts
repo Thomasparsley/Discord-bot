@@ -10,7 +10,7 @@ import {
 	skipCommand,
 	pauseCommand,
 	queueCommand,
-	
+	shuffleCommand,
 } from "./commands";
 
 const commands = [
@@ -19,6 +19,7 @@ const commands = [
 	skipCommand,
 	pauseCommand,
 	queueCommand,
+	shuffleCommand,
 ];
 
 const bot = new Bot({
