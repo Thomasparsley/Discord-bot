@@ -14,6 +14,8 @@ try {
 	token = process.env.DISCORD_TOKEN;
 }
 
+console.log({clientId, guildId, token});
+
 import {
 	pingCommand,
 	playCommand,
