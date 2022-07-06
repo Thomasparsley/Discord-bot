@@ -22,4 +22,4 @@ COPY --from=BuildStage /app /app
 
 RUN npm install --production
 
-CMD [ "node", "/app/index.js" ]
+CMD [ "node", "/app/dist/index.js" ]
