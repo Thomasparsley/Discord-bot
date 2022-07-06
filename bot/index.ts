@@ -12,6 +12,8 @@ import {
 	queueCommand,
 	shuffleCommand,
 	qouteCommand,
+	ppCommand,
+	ballCommand,
 } from "./commands";
 
 const commands = [
@@ -22,6 +24,8 @@ const commands = [
 	queueCommand,
 	shuffleCommand,
 	qouteCommand,
+	ppCommand,
+	ballCommand,
 ];
 
 const bot = new Bot({
