@@ -22,8 +22,12 @@ COPY --from=BuildStage /app /app
 
 RUN npm install --production
 
-RUN export DISCORD_CLIENT_ID=$(cat /run/secrets/CLIENTID) && \
-    export DISCORD_GUILD_ID=$(cat /run/secrets/GUILDID) && \
-    export DISCORD_TOKEN=$(cat /run/secrets/TOKEN)
+ARG ARG_DISCORD_CLIENT_ID
+ARG ARG_DISCORD_GUILD_ID
+ARG ARG_DISCORD_TOKEN
+
+ENV DISCORD_CLIENT_ID ${ARG_DISCORD_CLIENT_ID}
+ENV DISCORD_GUILD_ID ${ARG_DISCORD_GUILD_ID}
+ENV DISCORD_TOKEN ${ARG_DISCORD_TOKEN}
 
 CMD [ "node", "/app/dist/index.js" ]

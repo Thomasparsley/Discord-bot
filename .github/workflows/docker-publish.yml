@@ -74,10 +74,10 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          secrets: |
-            "DISCORD_CLIENT_ID=${{ secrets.CLIENTID }}"
-            "DISCORD_GUILD_ID=${{ secrets.GUILDID }}"
-            "DISCORD_TOKEN=${{ secrets.TOKEN }}"  
+          build-args: |
+            ARG_DISCORD_CLIENT_ID: ${{ secrets.CLIENTID }}
+            ARG_DISCORD_GUILD_ID: ${{ secrets.GUILDID }}
+            ARG_DISCORD_TOKEN: ${{ secrets.TOKEN }}
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
