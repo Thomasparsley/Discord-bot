@@ -28,7 +28,17 @@ export class Bot {
 		this.guildId = config.guildId;
 		this.clientId = config.clientId;  
 
-		this.client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES] });    
+		this.client = new Client({ 
+			intents: [
+				Intents.FLAGS.GUILDS, 
+				Intents.FLAGS.GUILD_VOICE_STATES,
+				Intents.FLAGS.GUILD_MESSAGES,
+			],
+			partials : [
+				"MESSAGE",
+				"CHANNEL", 
+			],
+		});    
 		this.rest = new REST({ version: REST_VERSION }).setToken(config.token);
 		this.MusicPlayer = new MusicPlayer();
 

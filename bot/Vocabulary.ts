@@ -12,6 +12,7 @@ export const errorArg = "Neplatný argument.";
 export const errorSpotifyAlbum = "Ze spotify lze načíst pouze playlist nebo písničku.";
 export const errorSkip = "Nastala chyba při přeskakování písničky.";
 export const errorShuffle = "Nastala chyba při mýchání.";
+export const errorQuote = "Nastala chyba při hledání citátu.";
 export const errorPause = "Nastala chyba při pozastavování písničky.";
 export const errorConnection = "Nastala chyba při připojení.";
 export const errorPlaylist = "Nastala chyba při parsování playlistu.";
@@ -62,4 +63,9 @@ export const CommandSkip = {
 export const CommandShuffle = {
 	name: "shuffle",
 	description: "Zamýchej playlist nebo queue.",
+};
+
+export const CommandQuote = {
+	name: "quote",
+	description: "Vypíše ti náhodný citát z místnosti s citáty.",
 };

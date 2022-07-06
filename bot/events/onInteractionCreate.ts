@@ -4,41 +4,48 @@ import { CommandArgs } from "../command";
 import { unknownCommand, executeError } from "../Vocabulary";
 
 const event: EventInteraction = async (interactionArgs) => {
-    const { client, interaction, commands, musicPlayer } = interactionArgs;
+	const { client, interaction, commands, musicPlayer } = interactionArgs;
 
-    if(!interaction.isCommand){
-        return;
-    }
+	if(!interaction.isCommand){
+		return;
+	}
 
-    const commandInteraction = (interaction as CommandInteraction);
+	const commandInteraction = (interaction as CommandInteraction);
 
-    const command = commands.get(commandInteraction.commandName);
+	const command = commands.get(commandInteraction.commandName);
 
-    const replySilent = async (content: string): Promise<void> => {
-        return await commandInteraction.reply({
-            content,
-            ephemeral: true,
-        });
-    }
+	const replySilent = async (content: string): Promise<void> => {
+		return await commandInteraction.reply({
+			content,
+			ephemeral: true,
+		});
+	};
 
-    try {
-        if (!command) {
-            await replySilent(unknownCommand);
-            return;
-        }
+	const reply = async (content: string): Promise<void> => {
+		return await commandInteraction.reply({
+			content,
+		});
+	};
 
-        const commandArgs: CommandArgs = {
-            client: client,
-            interaction: commandInteraction,
-            replySilent: replySilent,
-            musicPlayer: musicPlayer,
-        }
+	try {
+		if (!command) {
+			await replySilent(unknownCommand);
+			return;
+		}
 
-        await command.execute(commandArgs);
-    } catch (err) {
-        console.error(err);
-        await replySilent(executeError);
-    }
-}
+		const commandArgs: CommandArgs = {
+			client: client,
+			interaction: commandInteraction,
+			replySilent: replySilent,
+			musicPlayer: musicPlayer,
+			reply: reply,
+		};
 
-export default event
+		await command.execute(commandArgs);
+	} catch (err) {
+		console.error(err);
+		await replySilent(executeError);
+	}
+};
+
+export default event;

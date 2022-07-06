@@ -7,6 +7,7 @@ export interface CommandArgs {
     interaction: CommandInteraction<CacheType>;
     musicPlayer: MusicPlayer;
     replySilent: (content: string) => Promise<void>;
+	reply: (content: string) => Promise<void>;
 }
 
 export type CommandAction = (args: CommandArgs) => Awaitable<void>;
