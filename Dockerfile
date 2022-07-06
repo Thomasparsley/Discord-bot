@@ -22,4 +22,8 @@ COPY --from=BuildStage /app /app
 
 RUN npm install --production
 
+ENV DISCORD_CLIENT_ID=$(cat /run/secrets/CLIENTID)
+ENV DISCORD_GUILD_ID=$(cat /run/secrets/GUILDID)
+ENV DISCORD_TOKEN=$(cat /run/secrets/TOKEN)
+
 CMD [ "node", "/app/dist/index.js" ]
