@@ -5,6 +5,7 @@ export const songSkipped = "Písnička byla přeskočena.";
 export const songPaused = "Písnička byla pozastavena.";
 export const memeberNotConnected = "Musíš být ve hlasovém kanále.";
 export const emptyQueue = "Fronta je prázdná.";
+export const queueList = "Aktuální queue: ";
 
 export const errorArg = "Neplatný argument.";
 export const errorSpotifyAlbum = "Ze spotify lze načíst pouze playlist nebo písničku.";
@@ -29,9 +30,15 @@ export const CommandPlay = {
 	]
 };
 
-export const CommandList = {
-	name: "list",
+export const CommandQueue = {
+	name: "queue",
 	description: "Zobraz seznam skladeb.",
+	options: [
+		{
+			name: "count",
+			description: "Kolik písní chceš vypsat."
+		}
+	]
 };
 
 export const CommandPause = {

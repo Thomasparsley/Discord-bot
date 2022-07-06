@@ -1,8 +1,9 @@
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import { Empty, Optional, Some } from "../optional";
+import { Playlist, Song } from "./structures";
 
-import { Playlist, Song } from "./musicPlayer";
+
 
 export class InfoDownloader {
 	public static async ytSongInfo(url: string): Promise<Optional<Song>> {
@@ -26,10 +27,10 @@ export class InfoDownloader {
 			const result = await ytpl(url);
 
 			if(result) {
-				const playlist: Playlist = [];
+				const playlist: Playlist = new Playlist(result.url, result.title);
 
-				for(const song of result.items) {
-					playlist.push({
+				for(const song of result.items.reverse()) {
+					playlist.add({
 						title: song.title,
 						url: song.shortUrl, 
 					});

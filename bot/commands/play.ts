@@ -2,9 +2,9 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { GuildMember } from "discord.js";
 import ytsr from "ytsr";
 
-import { CommandPlay, errorArg, errorSpotifyAlbum, memeberNotConnected, songAdded } from "../Vocabulary";
+import { CommandPlay, errorArg, memeberNotConnected, songAdded } from "../Vocabulary";
 import { Command } from "../command";
-import { SongURL } from "../music/musicPlayer";
+import { SongURL } from "../music/structures";
 
 const reYT = /(https:\/\/)?(www.)?(youtube.com|youtu.be)(\S)+/g;
 // const reSpotify = /(https:\/\/)?(www.)?(open.spotify.com)\/(track\/|playlist\/|album\/){1}(\S)+/g;

@@ -1,23 +1,26 @@
 import { createAudioResource, VoiceConnectionStatus, entersState, AudioPlayerStatus } from "@discordjs/voice";
-import { VoiceBasedChannel } from "discord.js";
+import { SystemChannelFlags, VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
 import ytdl from "ytdl-core";
 
-import { emptyQueue, errorConnection, errorSkip } from "../Vocabulary";
+import { emptyQueue, errorConnection, errorSkip, queueList } from "../Vocabulary";
 import { PlayerConnection } from "./playerConnection";
 import { AudioPlayer } from "./audioPlayer";
 import { InfoDownloader } from "./infoDownloader";
-import { Empty, Optional, Some } from "../optional";
+import { Empty, Optional } from "../optional";
+import { instanceOfSong, Playlist, QueueItem, Song, SongURL } from "./structures";
 
 export class MusicPlayer {
+	private disconnectTimeout: NodeJS.Timeout | undefined;
 	private playerConnection: PlayerConnection | null;
 	private audioPlayer: AudioPlayer | null;
 	public queue: Array<QueueItem>;
-    
+	
 	private audioEmitter: EventEmitter;
 	private connectionEmitter: EventEmitter;
 
 	constructor(){
+		this.disconnectTimeout = undefined;
 		this.playerConnection = null;
 		this.audioPlayer = null;
 		this.queue = [];
@@ -73,8 +76,8 @@ export class MusicPlayer {
 			this.disconnect();
 		});
 
-		this.audioEmitter.on("idle", () => {
-			this.playSong();
+		this.audioEmitter.on("idle", async () => {
+			await this.playSong();
 		});
 	}
 
@@ -105,48 +108,92 @@ export class MusicPlayer {
 			const resource = createAudioResource(stream);
 			this.audioPlayer.play(resource);
 		} else if (!this.queue.length) {
-			this.disconnect();
-			// setTimeout(() => this.playSong(), 60e3);
+			this.disconnectTimeout = setTimeout(() => this.disconnect(), 10e3);
 		}
 	}
 
 	private async getSong(): Promise<Optional<Song>>{
-		const empty = Empty<Song>();
+		try {
+			const first = await this.getIndex(0);
+			const firstValue = (first as Optional<Song | Playlist>).get();
+	
+			if (instanceOfSong(firstValue)) {
+				return this.queue.pop() as Optional<Song>;
+			} else if (firstValue instanceof Playlist) {
+				const playlist = this.queue[0] as Optional<Playlist>;
+	
+				// Hamlet, Act III, Scene I [To be, or not to be]
+				const SongOrNotSong = playlist.get().pop();
+	
+				if (playlist.get().empty()){
+					this.queue.pop();
+				}
+	
+				return SongOrNotSong as Optional<Song>;
+			}
+		} catch (error) {
+			console.log(error);
+		}
+		
+		return Empty<Song>();
+	}
 
-		const item: QueueItem | undefined = this.queue[0];
+	private async getIndex(index: number) {
+		const item: QueueItem | undefined = this.queue[index];
 
 		if (!item){
-			return empty;
+			return Empty<Song>();
 		}
 
 		if (item instanceof Promise) {
-			const result: Optional<Song | Playlist> = await item;
+			try {
+				const result: Optional<Song | Playlist> = await item;
 
-			if (result.isPresent()) {
-				this.queue[0] = result;
-			} else {
-				this.queue.pop();
-				return this.getSong();
+				if (result.isPresent()) {
+					this.queue[index] = result;
+					return result;
+				} else {
+					this.queue.pop();
+					return this.getSong();
+				}
+			} catch (error) {
+				console.log(error);
 			}
+		} else if (item instanceof Optional) {
+			return item;
 		}
 
-		const first = (this.queue[0] as Optional<Song | Playlist>).get();
-		if (instanceOfSong(first)) {
-			return this.queue.pop() as Optional<Song>;	
-		} else if (Array.isArray(first)) {
-			const playlist = this.queue[0] as Optional<Playlist>;
+		return Empty<Song>();
+	}
 
-			// Hamlet, Act III, Scene I [To be, or not to be]
-			const SongOrNotSong = Some<Song | undefined>(playlist.get().pop());
+	public async getSongList(maxPrint: number){
+		let queue = queueList + "\n";
+		let counter = 0;
 
-			if (!playlist.get().length){
-				this.queue.pop();
+		for (const item of this.queue) {
+			if(++counter > maxPrint){
+				break;
 			}
+
+			const value = (await item).get();
+			if (instanceOfSong(value)) {
+				const song = value as Song;
+				queue += counter + ". " + song.title;
+			} else if (value instanceof Playlist) {
+				const playlist = value as Playlist;
+				queue += "Playlist: " + playlist.getName() + "\n";
 				
-			return SongOrNotSong as Optional<Song>;
+				for (const song of playlist.getList()) {
+					if (counter > maxPrint)
+						break;
+						
+					queue += "\t" + counter + ". " + song.title + "\n";
+					counter++;
+				}
+			}
 		}
-		
-		return empty;
+
+		return queue;
 	}
 
 	public async skipSong(skip: number){
@@ -159,7 +206,7 @@ export class MusicPlayer {
 				const first = this.queue[0];
 				console.log(first);
 
-				if (Array.isArray(first) || (first as Optional<Playlist>).get().length) {
+				if (Array.isArray(first) || !(first as Optional<Playlist>).get().empty()) {
 					(first as Optional<Playlist>).get().pop();
 				} else {	
 					this.queue.pop();
@@ -205,7 +252,11 @@ export class MusicPlayer {
 					InfoDownloader.ytPlaylistInfo(url)
 				);
 			}
-		} 
+		}
+		if(this.disconnectTimeout){
+			clearTimeout(this.disconnectTimeout);
+			this.audioEmitter.emit("idle");
+		}
 	}
 
 	private disconnect() {
@@ -215,25 +266,4 @@ export class MusicPlayer {
 		this.audioPlayer?.getPlayer().stop();
 		this.audioPlayer = null;
 	}
-}
-
-export interface SongURL{
-	url: string;
-	type: "youtube" | "spotify";
-}
-
-export interface Song {
-	title: string;
-	url: string;
-}
-
-type QueueItem = Optional<Song | Playlist> | Promise<Optional<Song | Playlist>>;
-export type Playlist = Array<Song>;
-
-function instanceOfSong(object: any): boolean {
-	if (typeof object === "object"){
-		return "title" in object || "url" in object;
-	}
-    
-	return false;
 }

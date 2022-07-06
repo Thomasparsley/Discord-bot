@@ -27,7 +27,6 @@ export class AudioPlayer {
 
 	private initOnError() {
 		this.player.on("error", (err: Error) => {
-			console.log("ERR #1");
 			console.warn(err);
 			this.partentEmitter.emit("error");
 		});
