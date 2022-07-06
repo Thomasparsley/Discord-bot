@@ -2,7 +2,17 @@ import { Bot } from "./bot";
 import onReady from "./events/onReady";
 import onInteractionCreate from "./events/onInteractionCreate";
 
-const { clientId, guildId, token } = require("../config.json");
+let clientId, guildId, token;
+try {
+	const config = require("../config.json");
+	clientId = config.clientId;
+	guildId = config.guildId;
+	token = config.token;
+} catch (error: any) {
+	clientId = process.env.DISCORD_CLIENT_ID;
+	guildId = process.env.DISCORD_GUILD_ID;
+	token = process.env.DISCORD_TOKEN;
+}
 
 import {
 	pingCommand,
